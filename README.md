@@ -45,3 +45,18 @@ Serializer out of the box is able to remove elements from the DB, but it was req
 new elements (defining how) and to update them. In ```Views``` it was required to implement POST, PUT, GET, DELETE
 requests.
 
+## Stage 2: making a Price Interval endpoint
+
+Price interval connects to the Product entity and shows how price was changing over time. There is repeated the same
+endpoints as for the Product class, but this time there was added method ```get_average_price```. The idea behind
+making average price, considering that prices can have different time intervals was to make time-weighted formula:
+
+```Python
+                 sum(PRICE_i * INTERVAL_DAYS_i)
+average_price = --------------------------------, where i stands for intervals
+                    sum(INTERVAL_DAYS_i)
+```
+
+The problem is that at the stage of writing this section of ```readme``` it was requiring to pass product ID in the
+path instead of passing it as the POST-request body part.
+
