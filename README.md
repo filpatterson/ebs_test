@@ -12,6 +12,12 @@ More details about this task should be provided by your HR or TL.
 
 # Implementation
 
+**IMPORTANT**: *use of the python with version 3.10+ will give an error because module ```collections``` has been moved
+to ```collections.abc.Callable```, make sure using Python 3.8 or 3.9*
+
+**NOTE:**: correct error log, there is specified that ```psycofg2``` is required for ```AbstractJsonModel```, while
+actually there is required ```psycopg2```
+
 It is required to initialize virtual environment to evade version errors of modules. Becuase of that, for the project 
 will be created virtual environment based on the Conda Python interpretator equal to Python 3.9. To make possible 
 installation of modules inside of the virtual environment it is required to install ```virtualenv``` module and 

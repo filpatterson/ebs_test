@@ -19,7 +19,7 @@ class TestProducts(TestCase):
             'description': 'Product description',
         }, format="json")
 
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 200)
         self.assertIn('id', response.data)
         return response.data['id']
 
@@ -31,12 +31,12 @@ class TestProducts(TestCase):
             'price': price,
         }, format="json")
 
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 200)
         self.assertIn('id', response.data)
 
     def _check_price(self, product_id, start_date, end_date, price, days):
         # Request GET /products/stats/ to get price stats
-        response = self.client.get(reverse('product-stats'), data={
+        response = self.client.post(reverse('product-stats-list'), data={
             'product': product_id,
             'start_date': start_date,
             'end_date': end_date

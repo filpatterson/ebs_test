@@ -3,53 +3,12 @@ from rest_framework.permissions import AllowAny
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.decorators import api_view
-
-import datetime
 
 from django.shortcuts import get_object_or_404
 
-from apps.products.models import Product, PriceInterval
-from apps.products.serializers import ProductSerializer, PriceIntervalSerializer
+from apps.products.models import Product, PriceInterval, ProductStats
+from apps.products.serializers import ProductSerializer, PriceIntervalSerializer, ProductStatsSerializer
 
-from collections import namedtuple
-
-
-# nt = namedtuple("object", ['model', 'serializers'])
-# pattern = {
-#     "product": nt(Product, ProductSerializer),
-#     "price_interval": nt(PriceInterval, PriceIntervalSerializer)
-# }
-
-# @api_view(['GET', 'POST'])
-# def ListView(request, api_name):
-#     object = pattern.get(api_name, None)
-#     if object == None:
-#         #   if no object found then throw not found response to user
-#         return Response(
-#             data = 'invalid URL',
-#             status = status.HTTP_404_NOT_FOUND
-#         )
-
-#     if request.method == "GET":
-#         object_list = object.model.objects.all()
-#         serializers = object.serializers(object_list, many=True)
-#         return Response(serializers.data)
-#     if request.method == "POST":
-#         data = request.data
-#         serializers = object.serializers(data=data)
-
-#         if not serializers.is_valid():
-#             #   throw error if given POST request has incorrect data
-#             return Response(
-#                 data = serializers.error,
-#                 status = status.HTTP_404_NOT_FOUND
-#             )
-#         serializers.save()
-#         return Response(
-#             data = serializers.error,
-#             status = status.HTTP_201_CREATED
-#         )
 
 class ProductViewSet(BaseListModelMixin, BaseCreateModelMixin, BaseViewSet):
     permission_classes = AllowAny,
@@ -57,6 +16,7 @@ class ProductViewSet(BaseListModelMixin, BaseCreateModelMixin, BaseViewSet):
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
 
+    #   address via POST request to localhost/products
     @action(detail=True, methods=['post'])
     def post(self, request):
         """POST handler, creates new product using given data
@@ -68,25 +28,34 @@ class ProductViewSet(BaseListModelMixin, BaseCreateModelMixin, BaseViewSet):
         serializer = ProductSerializer(data=product)
         if serializer.is_valid():
             product_saved = serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
+            return Response(data={"id": product_saved.id}, status=status.HTTP_201_CREATED)
 
+    #   address via GET request to localhost/products
     @action(detail=True, methods=['get'])
     def get(self):
         """GET handler, gives all products in a list form
         """
         products = Product.objects.all()
         serializer = ProductSerializer(products, many=True)
-        return Response({"articles": serializer.data})
+        return Response({"products": serializer.data})
 
+    #   works via PUT request to localhost/products/<pk_to_change>/put
     @action(detail=True, methods=['put'])
     def put(self, request, pk):
         saved_product = get_object_or_404(Product.objects.all(), pk=pk)
-        data = request.data.get('product')
-        serializer = ProductSerializer(instance=saved_product, data=data, partial=True)
-        if serializer.is_valid():
-            saved_product = serializer.save()
-        return Response(status.HTTP_200_OK)
+        name = request.data.get('name')
+        sku = request.data.get('sku')
+        description = request.data.get('description')
+        product = {"name": name,
+                   "sku": sku,
+                   "description": description}
 
+        serializer = ProductSerializer(instance=saved_product, data=product, partial=True)
+        if serializer.is_valid():
+            final_result = serializer.save()
+            return Response(status.HTTP_200_OK)
+
+    #   works via DELETE request to localhost/products/<pk_to_change>/delete
     @action(detail=True, methods=['delete'])
     def delete(self, request, pk):
         product = get_object_or_404(Product.objects.all(), pk=pk)
@@ -111,57 +80,7 @@ class ProductPriceViewSet(BaseListModelMixin, BaseCreateModelMixin, BaseViewSet)
         serializer = ProductSerializer(data=price)
         if serializer.is_valid():
             price_saved = serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
-
-    @action(detail=True, methods=['post'])
-    def get_average_price(self, request, pk):
-        # product = request.data.get("product")
-        product = int(pk)
-        start_time = datetime.datetime.strptime(request.data.get("start_date"), "%Y-%M-%d").date()
-        end_time = datetime.datetime.strptime(request.data.get("end_date"), "%Y-%M-%d").date()
-
-        all_price_intervals = PriceInterval.objects.all()
-        found_price_intervals = []
-        intervals_days = []
-        intervals_prices = []
-        for price_interval in all_price_intervals:
-            if price_interval.product.id == product:
-                found_price_intervals.append(price_interval)
-
-        found_price_intervals = sorted(found_price_intervals, key=lambda interval: interval.start_date)
-
-        is_start_found = False
-        if start_time <= found_price_intervals[0].start_date:
-            is_start_found = True
-
-        for price_interval in found_price_intervals:
-            if is_start_found:
-                if price_interval.is_in_between(end_time):
-                    intervals_prices.append(price_interval.price)
-                    intervals_days.append(price_interval.get_days(end_date=end_time))
-                    break
-                else:
-                    intervals_prices.append(price_interval.price)
-                    intervals_days.append(price_interval.get_days())
-            if not is_start_found:
-                if price_interval.is_in_between(start_time):
-                    is_start_found = True
-                    if price_interval.is_in_between(end_time):
-                        intervals_prices.append(price_interval.price)
-                        intervals_days.append(price_interval.get_days(start_time, end_time))
-                        break
-                    else:
-                        intervals_prices.append(price_interval.price)
-                        intervals_days.append(price_interval.get_days(start_date=start_time))
-
-        time_weighted_price = 0
-        for index in range(len(intervals_prices)):
-            time_weighted_price += intervals_prices[index] * intervals_days[index]
-
-        print(time_weighted_price / sum(intervals_days))
-
-
-
+            return Response(data={"id": price_saved.id}, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['get'])
     def get(self):
@@ -169,16 +88,24 @@ class ProductPriceViewSet(BaseListModelMixin, BaseCreateModelMixin, BaseViewSet)
         """
         prices = PriceInterval.objects.all()
         serializer = ProductSerializer(prices, many=True)
-        return Response({"articles": serializer.data})
+        return Response({"price_intervals": serializer.data})
 
     @action(detail=True, methods=['put'])
     def put(self, request, pk):
         saved_price_interval = get_object_or_404(PriceInterval.objects.all(), pk=pk)
-        data = request.data.get('product')
+        product = request.data.get('product')
+        price = request.data.get('price')
+        start_date = request.data.get('start_date')
+        end_date = request.data.get('end_date')
+        data = {"product": product,
+                "price": price,
+                "start_date": start_date,
+                "end_date": end_date}
         serializer = ProductSerializer(instance=saved_price_interval, data=data, partial=True)
         if serializer.is_valid():
             saved_price_interval = serializer.save()
-        return Response(status.HTTP_200_OK)
+            return Response({"id": saved_price_interval.id},
+                             status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['delete'])
     def delete(self, request, pk):
@@ -186,3 +113,56 @@ class ProductPriceViewSet(BaseListModelMixin, BaseCreateModelMixin, BaseViewSet)
         price_interval.delete()
         return Response(status.HTTP_200_OK)
 
+
+class ProductStatsViewSet(BaseListModelMixin, BaseCreateModelMixin, BaseViewSet):
+    permission_classes = AllowAny,
+    authentication_classes = ()
+    serializer_class = ProductStatsSerializer
+    queryset = ProductStats.objects.all()
+
+    @action(detail=True, methods=['create'])
+    def post(self, request):
+        """POST handler, requests average price per specified time period
+        """
+        stats = request.data
+
+        #   serializer is able to check if given request data is valid or not
+        serializer = ProductStatsSerializer(data=stats)
+
+        if serializer.is_valid():
+            stats = serializer.save()
+            return Response({"days": stats.days_count, "price": stats.average_price},
+                            status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['list'])
+    def get(self):
+        """GET handler, gives all products in a list form
+        """
+        prices = ProductStats.objects.all()
+        serializer = ProductStatsSerializer(prices, many=True)
+        return Response({"product_stats": serializer.data})
+
+    # @action(detail=True, methods=['update'])
+    # def update(self, request, pk):
+    #     saved_product = get_object_or_404(ProductStats.objects.all(), pk=pk)
+    #     product = request.data.get('product')
+    #     start_date = request.data.get('start_date')
+    #     end_date = request.data.get('end_date')
+    #     price = request.data.get('price')
+    #     days = request.data.get('days')
+    #     product = {"product": product,
+    #                "start_date": start_date,
+    #                "end_date": end_date,
+    #                "price": price,
+    #                "days": days}
+    #
+    #     serializer = ProductSerializer(instance=saved_product, data=product, partial=True)
+    #     if serializer.is_valid():
+    #         final_result = serializer.save()
+    #         return Response(status.HTTP_200_OK)
+    #
+    # @action(detail=True, methods=['delete'])
+    # def delete(self, request, pk):
+    #     product_stats = get_object_or_404(ProductStats.objects.all(), pk=pk)
+    #     product_stats.delete()
+    #     return Response(status.HTTP_200_OK)
