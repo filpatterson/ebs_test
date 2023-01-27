@@ -19,7 +19,7 @@ class TestProducts(TestCase):
             'description': 'Product description',
         }, format="json")
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         self.assertIn('id', response.data)
         return response.data['id']
 
@@ -31,7 +31,7 @@ class TestProducts(TestCase):
             'price': price,
         }, format="json")
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         self.assertIn('id', response.data)
 
     def _check_price(self, product_id, start_date, end_date, price, days):
@@ -42,7 +42,7 @@ class TestProducts(TestCase):
             'end_date': end_date
         })
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
 
         # Check price calculation
         self.assertIn('price', response.data)

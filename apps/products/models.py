@@ -39,12 +39,12 @@ class PriceInterval(BaseModel):
             return (end_date - start_date).days + 1
 
     def __str__(self):
-        return f"Product: {self.product}; price: {self.price}; start date: {self.start_date}; end date: {self.end_date}"
+        return f"Product: {self.product.id}; price: {self.price}; start date: {self.start_date}; end date: {self.end_date}"
 
 
 class ProductStats(BaseModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     start_date = models.DateField(null=False)
     end_date = models.DateField(null=False)
-    average_price = models.FloatField(null=True)
-    days_count = models.IntegerField(default=0)
+    price = models.FloatField(null=True)
+    days = models.IntegerField(default=0)
