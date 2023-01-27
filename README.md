@@ -66,3 +66,17 @@ average_price = --------------------------------, where i stands for intervals
 The problem is that at the stage of writing this section of ```readme``` it was requiring to pass product ID in the
 path instead of passing it as the POST-request body part.
 
+## Stage 3: making average price endpoint
+
+Considering presence of the Product Stats elements it was decided to use them to form endpoints for the average price
+calculation. Original test suggestion is in using the GET request to the endpoint transmitting body. The problem is
+that as a standard it is considered that GET should be empty, without body. Therefore, it is either required to
+specify POST request (made in this case) with body or to make a GET with data transmitted in the address. GET was
+modified to the POST and it provides average price back to the requester.
+
+It was required to make rework of the Price Interval class considering that old records can be rewritten by the new
+ones.
+
+**Suggestion**: *maybe performance will improve in case of setting alternative class structure. Instead of having
+```PriceInterval``` can be set ```PriceDatemark``` setting one ```Date``` field and having two fields: ```beforePrice```
+registering price before this date landmark and ```afterPrice``` with price after this date landmark.
